@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ssv-lb-tcp
+spec:
+  selector:
+    app: ssv
+  ports:
+    - port: 13000
+      protocol: TCP
+      targetPort: 13000
+      name: port-13000
+    - port: 15000
+      protocol: TCP
+      targetPort: 15000
+      name: port-15000
+  type: LoadBalancer
+  loadBalancerIP: <<ssv-load-balancer-external-ip>>
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ssv-lb-udp
+spec:
+  selector:
+    app: ssv
+  ports:
+    - port: 12000
+      protocol: UDP
+      targetPort: 12000
+      name: port-12000
+  type: LoadBalancer
+  loadBalancerIP: <<ssv-load-balancer-external-ip>>

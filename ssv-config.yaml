@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ssv-config
+data:
+  config.yaml: |
+    db:
+      Path: /opt/ssv/data
+    p2p:
+      # replace with your ip
+      HostAddress: <<ssv-load-balancer-external-ip>>
+    eth2:
+      Network: prater
+      BeaconNodeAddr: <<my.eth2.beaconnode.address:myport>>
+    eth1:
+      ETH1Addr: wss://<<my.eth1.wss.endpoint>>
+      RegistryContractAddr: 0x687fb596F3892904F879118e2113e1EEe8746C2E
+    OperatorPrivateKey: <<my.generated.ssv.operator.priv.key>>
+    global:
+      LogLevel: debug

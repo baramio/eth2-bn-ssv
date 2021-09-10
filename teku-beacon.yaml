@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: tekubeacon-service
+  labels:
+    app: tekubeacon
+spec:
+  ports:
+  - port: 9000
+    name: p2pport
+  - port: 5051
+    name: restapiport
+  selector:
+    app: tekubeacon
+  type: LoadBalancer
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: tekubeacon-ss
+spec:
+  serviceName: tekubeacon-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tekubeacon
+  template:
+    metadata:
+      labels:
+        app: tekubeacon
+    spec:
+      securityContext:
+        runAsUser: 1099
+        runAsGroup: 1099
+        fsGroup: 1099
+      containers:
+      - name: teku
+        image: consensys/teku:latest
+        resources:
+          limits:
+            cpu: "3.0"
+            memory: "16000Mi"
+          requests:
+            cpu: "2.5"
+            memory: "8000Mi"
+        ports:
+        - containerPort: 9000
+          name: p2pport
+        - containerPort: 5051
+          name: restapiport
+        args:
+          - --network=prater
+          - --data-base-path=/opt/teku/data
+          - --eth1-endpoints=<<my.eth1.endpoint>>
+          - --p2p-port=9000
+          - --p2p-advertised-ip=<<load-balancer-external-ip>>
+          - --rest-api-enabled=true
+          - --rest-api-docs-enabled=true
+          - --rest-api-host-allowlist=*
+        env:
+        - name: JAVA_OPTS
+          value: -Xmx4g
+        volumeMounts:
+        - name: tekudata
+          mountPath: /opt/teku/data
+  volumeClaimTemplates:
+  - metadata:
+      name: tekudata
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 50Gi

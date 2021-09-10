@@ -1,0 +1,87 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ssv-service
+  labels:
+    app: ssv
+spec:
+  type: NodePort
+  ports:
+    - port: 12000
+      protocol: UDP
+      targetPort: 12000
+      name: port-12000
+    - port: 13000
+      protocol: TCP
+      targetPort: 13000
+      name: port-13000
+    - port: 15000
+      protocol: TCP
+      targetPort: 15000
+      name: port-15000
+  selector:
+    app: ssv
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ssv-ss
+spec:
+  serviceName: ssv-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ssv
+  template:
+    metadata:
+      labels:
+        app: ssv
+    spec:
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
+        fsGroup: 0
+      containers:
+      - name: ssv
+        image: bloxstaking/ssv-node:latest
+        securityContext:
+          runAsUser: 0
+          runAsGroup: 0
+        resources:
+          limits:
+            cpu: "3.0"
+            memory: "2000Mi"
+          requests:
+            cpu: "2.5"
+            memory: "2000Mi"
+        ports:
+        - containerPort: 12000
+          name: port-12000
+          protocol: UDP
+        - containerPort: 13000
+          name: port-13000
+        - containerPort: 15000
+          name: port-15000
+        env:
+        - name: CONFIG_PATH
+          value: /tmp/config.yaml
+        command: ["/bin/sh","-c"]
+        args: ["make HOST_ADDRESS=<<ssv-load-balancer-external-ip>> start-node;"]
+        volumeMounts:
+        - name: ssvdata
+          mountPath: /opt/ssv/data
+        - name: config-volume
+          mountPath: /tmp/config.yaml
+          subPath: config.yaml
+      volumes:
+      - name: config-volume
+        configMap:
+          name: ssv-config
+  volumeClaimTemplates:
+  - metadata:
+      name: ssvdata
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 10Gi
