@@ -1,8 +1,9 @@
 apiVersion: v1
-kind: ConfigMap
+kind: Secret
 metadata:
   name: ssv-config
-data:
+type: Opaque
+stringData:
   config.yaml: |
     db:
       Path: /opt/ssv/data

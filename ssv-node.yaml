@@ -1,27 +1,3 @@
-apiVersion: v1
-kind: Service
-metadata:
-  name: ssv-service
-  labels:
-    app: ssv
-spec:
-  type: NodePort
-  ports:
-    - port: 12000
-      protocol: UDP
-      targetPort: 12000
-      name: port-12000
-    - port: 13000
-      protocol: TCP
-      targetPort: 13000
-      name: port-13000
-    - port: 15000
-      protocol: TCP
-      targetPort: 15000
-      name: port-15000
-  selector:
-    app: ssv
----
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -49,11 +25,11 @@ spec:
           runAsGroup: 0
         resources:
           limits:
-            cpu: "3.0"
-            memory: "2000Mi"
+            cpu: "1.0"
+            memory: "500Mi"
           requests:
-            cpu: "2.5"
-            memory: "2000Mi"
+            cpu: "0.5"
+            memory: "500Mi"
         ports:
         - containerPort: 12000
           name: port-12000
@@ -65,6 +41,8 @@ spec:
         env:
         - name: CONFIG_PATH
           value: /tmp/config.yaml
+        - name: ETH_1_SYNC_OFFSET
+          value: "5367F4"
         command: ["/bin/sh","-c"]
         args: ["make HOST_ADDRESS=<<ssv-load-balancer-external-ip>> start-node;"]
         volumeMounts:
@@ -73,10 +51,11 @@ spec:
         - name: config-volume
           mountPath: /tmp/config.yaml
           subPath: config.yaml
+          readOnly: true
       volumes:
       - name: config-volume
-        configMap:
-          name: ssv-config
+        secret:
+          secretName: ssv-config
   volumeClaimTemplates:
   - metadata:
       name: ssvdata
@@ -84,4 +63,4 @@ spec:
       accessModes: [ "ReadWriteOnce" ]
       resources:
         requests:
-          storage: 10Gi
+          storage: 1Gi
