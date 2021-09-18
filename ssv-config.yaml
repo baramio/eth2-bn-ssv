@@ -16,6 +16,7 @@ stringData:
     eth1:
       ETH1Addr: wss://<<my.eth1.wss.endpoint>>
       RegistryContractAddr: 0x687fb596F3892904F879118e2113e1EEe8746C2E
+      ETH1SyncOffset: 5367F4
     OperatorPrivateKey: <<my.generated.ssv.operator.priv.key>>
     global:
       LogLevel: debug

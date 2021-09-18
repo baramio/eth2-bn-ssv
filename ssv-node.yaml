@@ -41,8 +41,6 @@ spec:
         env:
         - name: CONFIG_PATH
           value: /tmp/config.yaml
-        - name: ETH_1_SYNC_OFFSET
-          value: "5367F4"
         command: ["/bin/sh","-c"]
         args: ["make HOST_ADDRESS=<<ssv-load-balancer-external-ip>> start-node;"]
         volumeMounts:
