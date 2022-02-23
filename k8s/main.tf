@@ -10,12 +10,6 @@ provider "kubernetes" {
   config_path    = "baramio-kubeconfig.yaml"
 }
 
-provider "helm" {
-  kubernetes {
-    config_path = "baramio-kubeconfig.yaml"
-  }
-}
-
 variable "eth-cc-endpoint" {
   sensitive = true
 }
@@ -26,13 +20,6 @@ variable "operator-priv-key" {
   sensitive = true
 }
 
-resource "helm_release" "nginx_ingress" {
-  name       = "ingress-nginx"
-  repository = "https://kubernetes.github.io/ingress-nginx"
-  chart      = "ingress-nginx"
-  namespace = "ingress-nginx"
-  create_namespace = true
-}
 
 resource "kubernetes_namespace" "ssv" {
   metadata {
@@ -66,7 +53,7 @@ global:
   }
 }
 
-# https://stackoverflow.com/questions/61430311/exposing-multiple-tcp-udp-services-using-a-single-loadbalancer-on-k8s
+
 resource "kubernetes_stateful_set" "ssv-node" {
   metadata {
     name = "ssv"
@@ -98,10 +85,12 @@ resource "kubernetes_stateful_set" "ssv-node" {
             protocol = "UDP"
           }
           port {
-            container_port = 0
+            container_port = 13000
+            name = "port-13000"
           }
           port {
-            container_port = 0
+            container_port = 15000
+            name = "port-15000"
           }
           args = ["make", "start-node"]
           env {
@@ -113,6 +102,10 @@ resource "kubernetes_stateful_set" "ssv-node" {
             mount_path  = "/tmp"
             read_only  = true
           }
+          volume_mount {
+            mount_path = "/opt/ssv/data"
+            name       = "ssvdata"
+          }
         }
         volume {
           name = "config-volume"
@@ -122,25 +115,21 @@ resource "kubernetes_stateful_set" "ssv-node" {
         }
       }
     }
+    volume_claim_template {
+      metadata {
+        name = "ssvdata"
+        namespace = "ssv"
+      }
+      spec {
+        access_modes = ["ReadWriteOnce"]
+        resources {
+          requests = {
+            storage = "10Gi"
+          }
+        }
+        storage_class_name = "do-block-storage"
+      }
+    }
     service_name = "ssv-node"
-  }
-}
-
-resource "kubernetes_service" "ssv_service" {
-  metadata {
-    name = "ssv-node"
-    namespace = "ssv"
-    labels = {
-      app = "ssv-node"
-    }
-  }
-  spec {
-    selector = {
-      app = "ssv-node"
-    }
-    cluster_ip = "None"
-    port {
-      port = 6688
-    }
   }
 }
