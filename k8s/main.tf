@@ -19,17 +19,18 @@ variable "eth-ec-wss-endpoint" {
 variable "operator-priv-key" {
   sensitive = true
 }
+variable "operator-name" {}
 
 
-resource "kubernetes_namespace" "ssv" {
-  metadata {
-    name = "ssv"
-  }
-}
+#resource "kubernetes_namespace" "ssv" {
+#  metadata {
+#    name = "ssv"
+#  }
+#}
 
 resource "kubernetes_secret" "ssv-config" {
   metadata {
-    name      = "ssv-config"
+    name      = "ssv-config-${var.operator-name}"
     namespace = "ssv"
   }
   data = {
@@ -45,7 +46,7 @@ eth2:
 eth1:
   ETH1Addr: ${var.eth-ec-wss-endpoint}
   RegistryContractAddr: 0x687fb596F3892904F879118e2113e1EEe8746C2E
-  ETH1SyncOffset: 5367F4
+  # ETH1SyncOffset: 5367F4
 OperatorPrivateKey: ${var.operator-priv-key}
 global:
   LogLevel: debug
@@ -56,29 +57,29 @@ global:
 
 resource "kubernetes_stateful_set" "ssv-node" {
   metadata {
-    name = "ssv"
+    name = "ssv-${var.operator-name}"
     namespace = "ssv"
     labels = {
-      app = "ssv-node"
+      app = "ssv-node-${var.operator-name}"
     }
   }
   spec {
     replicas = 1
     selector {
       match_labels = {
-        app = "ssv-node"
+        app = "ssv-node-${var.operator-name}"
       }
     }
     template {
       metadata {
         labels = {
-          app = "ssv-node"
+          app = "ssv-node-${var.operator-name}"
         }
       }
       spec {
         container {
           image = "bloxstaking/ssv-node:latest"
-          name  = "ssv-node"
+          name  = "ssv-node-${var.operator-name}"
           port {
             container_port = 12000
             name = "port-12000"
@@ -104,20 +105,20 @@ resource "kubernetes_stateful_set" "ssv-node" {
           }
           volume_mount {
             mount_path = "/opt/ssv/data"
-            name       = "ssvdata"
+            name       = "ssvdata-${var.operator-name}"
           }
         }
         volume {
           name = "config-volume"
           secret {
-            secret_name = "ssv-config"
+            secret_name = "ssv-config-${var.operator-name}"
           }
         }
       }
     }
     volume_claim_template {
       metadata {
-        name = "ssvdata"
+        name = "ssvdata-${var.operator-name}"
         namespace = "ssv"
       }
       spec {
