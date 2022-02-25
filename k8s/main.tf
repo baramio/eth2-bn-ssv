@@ -30,11 +30,11 @@ variable "operator-priv-key-1" {
   sensitive = true
 }
 
-#resource "kubernetes_namespace" "ssv" {
-#  metadata {
-#    name = "ssv"
-#  }
-#}
+resource "kubernetes_namespace" "ssv" {
+  metadata {
+    name = "ssv"
+  }
+}
 
 resource "kubernetes_secret" "ssv-config" {
   metadata {
@@ -106,11 +106,11 @@ resource "kubernetes_stateful_set" "ssv-node" {
         init_container {
           name = "init-ssv-node"
           image = "bloxstaking/ssv-node:latest"
-          command = ['bash', '-c', <<EOF
+          command = ["bash", "-c", <<EOF
 set -ex
 # Generate mysql server-id from pod ordinal index.
 [[ `hostname` =~ -([0-9]+)$ ]] || exit 1
-ordinal=\${BASH_REMATCH[1]}
+ordinal=$${BASH_REMATCH[1]}
 # Copy appropriate conf.d files from config-map to emptyDir.
 if [[ $ordinal -eq 0 ]]; then
   cp /mnt/config-map/config0.yaml /mnt/conf/config.yaml
@@ -125,7 +125,7 @@ fi
           }
           volume_mount {
             mount_path = "/mnt/config-map"
-            name       = "ssv-config"
+            name       = "config-volume"
           }
         }
         container {
